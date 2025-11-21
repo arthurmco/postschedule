@@ -1,4 +1,5 @@
-from psched.database import create_database_if_not_exist, create_post_entry, return_next_post_entry
+from psched.database import create_database_if_not_exist, create_post_entry, return_next_post_entry, \
+    submit_post_entry
 from psched.post import Post
 import argparse
 
@@ -21,7 +22,7 @@ def open_editor_in_file_and_retrieve_content(filepath, *, delete_if_exists=True)
 
 def cmd_create_post(args):
     ctnt = open_editor_in_file_and_retrieve_content("content.txt")
-    p = Post.create(args.title, ctnt)
+    p = Post.create(args.title, ctnt)    
     create_post_entry(p)    
 
 def cmd_list_post(args):
@@ -30,7 +31,7 @@ def cmd_list_post(args):
         print("No next posts")
     
     for p in nextposts:
-        print(f"{p.title} {p.content[:30]}...")
+        print(f"{p.post_id:03d} <{p.title}> (cdate: {p.create_date.isoformat()}) {p.content[:60]}...")
 
     print("")
 
@@ -38,14 +39,26 @@ def cmd_pull_post(args):
     nextposts = return_next_post_entry()
     if len(nextposts) == 0:
         print("No next posts. Create a post, please")
+        return
     
     curpost = nextposts[0]
     print("Copying to clipboard not yet implemented...")
     print("")
     print(f"TITLE: {curpost.title}")
+    print(f"CREATION DATE: {curpost.create_date.isoformat()}")
     print(f"{curpost.content}")
+
+
+def cmd_commit_post(args):
+    nextposts = return_next_post_entry()
+    if len(nextposts) == 0:
+        print("No next posts. Create a post, please")
+        return
+
+    submit_post_entry(nextposts[0])
+    print(f"Post {nextposts[0].title} commited.")
     
-    
+        
 def main():
     parser = argparse.ArgumentParser(
         prog='postschedule',
@@ -64,8 +77,10 @@ def main():
     p_pull.set_defaults(func=cmd_pull_post)
     
     p_post = subparsers.add_parser("post", help="Register a pulled post (the most recent pull by default)")
+    p_post.set_defaults(func=cmd_commit_post)
+    
     p_delete = subparsers.add_parser("delete", help="Delete a post")    
-
+    p_delete.add_argument("id")
     
     args = parser.parse_args()    
 
