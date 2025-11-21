@@ -1,6 +1,8 @@
 from psched.post import Post
 import sqlite3
 from datetime import datetime
+import os
+import os.path
 
 DB_PATH = "./posts.db"
 
@@ -11,6 +13,10 @@ def create_database():
         CREATE TABLE posts(id INTEGER PRIMARY KEY ASC,
         title TEXT, content TEXT, create_date NOT NULL, modify_date, post_date)""")
 
+
+def create_database_if_not_exist():
+    if not os.path.exists(DB_PATH):
+        create_database()
 
 def format_date(d: datetime) -> str:
     return d.isoformat()
